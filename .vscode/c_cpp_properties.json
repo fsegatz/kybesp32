@@ -13,7 +13,8 @@
             "cStandard": "c17",
             "cppStandard": "c++17",
             "intelliSenseMode": "windows-msvc-x64",
-            "configurationProvider": "ms-vscode.cmake-tools"
+            "configurationProvider": "ms-vscode.cmake-tools",
+            "compilerPath": "C:\\Users\\ihsan\\.espressif\\tools\\xtensa-esp32s3-elf\\esp-2021r2-patch3-8.4.0\\xtensa-esp32s3-elf\\bin\\xtensa-esp32s3-elf-gcc.exe"
         }
     ],
     "version": 4
