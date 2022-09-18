@@ -8,6 +8,7 @@
         "target/esp32.cfg"
     ],
     "files.associations": {
-        "sha2.h": "c"
+        "sha2.h": "c",
+        "randombytes.h": "c"
     }
 }
