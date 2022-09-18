@@ -1,0 +1,1 @@
+void indcpa_keypair_gen(unsigned char *pk, unsigned char *sk);

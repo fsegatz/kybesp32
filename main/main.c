@@ -1,15 +1,17 @@
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "indcpa.h"
 
-const uint32_t print_task_stack = 1024;
+const uint32_t print_task_stack = 10240;
 const uint32_t print_task_priority = configMAX_PRIORITIES;
 
 void print_task(void) {
     while(1) {
-        printf("hallo welt\n");
+        //printf("hallo welt\n");
+        indcpa_keypair_gen(NULL, NULL);
         fflush(stdout);
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        vTaskDelay(pdMS_TO_TICKS(5000));
     }
 }
 
