@@ -10,6 +10,7 @@
     "files.associations": {
         "sha2.h": "c",
         "randombytes.h": "c",
-        "esp_cpu.h": "c"
+        "esp_cpu.h": "c",
+        "*.ipp": "c"
     }
 }

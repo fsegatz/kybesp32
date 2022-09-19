@@ -9,6 +9,9 @@
 #include "symmetric.h"
 #include "randombytes.h"
 
+#include "mbedtls/sha512.h"
+#include "sha/sha_parallel_engine.h"
+
 /*************************************************
 * Name:        pack_pk
 *
@@ -214,7 +217,12 @@ void indcpa_keypair(uint8_t pk[KYBER_INDCPA_PUBLICKEYBYTES],
   polyvec a[KYBER_K], e, pkpv, skpv;
 
   esp_randombytes(buf, KYBER_SYMBYTES);
+
+  #if (SHA_ACC == 1)
+  esp_sha(SHA2_512, buf, KYBER_SYMBYTES, buf);
+  #else
   hash_g(buf, buf, KYBER_SYMBYTES);
+  #endif
 
   // printf("-------------------\n");
   // for(int i=0; i<64; i++) {

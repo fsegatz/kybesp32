@@ -46,7 +46,7 @@ void test_kyber_kem(void) {
 
 void app_main(void)
 {
-    xTaskCreatePinnedToCore(&test_kyber_kem, "Test kem task", test_kyber_kem_stack, NULL, test_kyber_kem_priority, NULL, 0);
+    xTaskCreatePinnedToCore(&test_kyber_kem, "Test kem task", test_kyber_kem_stack, NULL, test_kyber_kem_priority, NULL, 1);
     return;
 }
 
