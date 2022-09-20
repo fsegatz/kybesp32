@@ -8,6 +8,10 @@
 #include "randombytes.h"
 #include "stdio.h"
 
+#include "mbedtls/sha256.h"
+#include "mbedtls/sha512.h"
+#include "sha/sha_parallel_engine.h"
+
 /*************************************************
 * Name:        crypto_kem_keypair
 *
@@ -28,7 +32,13 @@ int crypto_kem_keypair(uint8_t *pk,
   indcpa_keypair(pk, sk);
   for(i=0;i<KYBER_INDCPA_PUBLICKEYBYTES;i++)
     sk[i+KYBER_INDCPA_SECRETKEYBYTES] = pk[i];
+  
+  #if (SHA_ACC == 1)
+  esp_sha(SHA2_256, pk, KYBER_PUBLICKEYBYTES, sk+KYBER_SECRETKEYBYTES-2*KYBER_SYMBYTES);
+  #else
   hash_h(sk+KYBER_SECRETKEYBYTES-2*KYBER_SYMBYTES, pk, KYBER_PUBLICKEYBYTES);
+  #endif
+
   /* Value z for pseudo-random output on reject */
   esp_randombytes(sk+KYBER_SECRETKEYBYTES-KYBER_SYMBYTES, KYBER_SYMBYTES);
   return 0;
@@ -59,19 +69,37 @@ int crypto_kem_enc(uint8_t *ct,
 
   esp_randombytes(buf, KYBER_SYMBYTES);
   /* Don't release system RNG output */
-  hash_h(buf, buf, KYBER_SYMBYTES);
+  #if (SHA_ACC == 1)
+  esp_sha(SHA2_256, buf, KYBER_SYMBYTES, buf);
+  #else
+  hash_h(buf, buf, KYBER_SYMBYTES);  
+  #endif
 
   /* Multitarget countermeasure for coins + contributory KEM */
+  #if (SHA_ACC == 1)
+  esp_sha(SHA2_256, pk, KYBER_PUBLICKEYBYTES, buf+KYBER_SYMBYTES);
+  esp_sha(SHA2_512, buf, 2*KYBER_SYMBYTES, kr);
+  #else
   hash_h(buf+KYBER_SYMBYTES, pk, KYBER_PUBLICKEYBYTES);
-  hash_g(kr, buf, 2*KYBER_SYMBYTES);
+  hash_g(kr, buf, 2*KYBER_SYMBYTES);  
+  #endif
 
   /* coins are in kr+KYBER_SYMBYTES */
   indcpa_enc(ct, buf, pk, kr+KYBER_SYMBYTES);
 
   /* overwrite coins in kr with H(c) */
+  #if (SHA_ACC == 1)
+  esp_sha(SHA2_256, ct, KYBER_CIPHERTEXTBYTES, kr+KYBER_SYMBYTES);
+  #else
   hash_h(kr+KYBER_SYMBYTES, ct, KYBER_CIPHERTEXTBYTES);
+  #endif
+
   /* hash concatenation of pre-k and H(c) to k */
+  #if (SHA_ACC == 1)
+  esp_sha(SHA2_256, kr, 2*KYBER_SYMBYTES, ss);
+  #else
   kdf(ss, kr, 2*KYBER_SYMBYTES);
+  #endif
   return 0;
 }
 
@@ -109,20 +137,32 @@ int crypto_kem_dec(uint8_t *ss,
   /* Multitarget countermeasure for coins + contributory KEM */
   for(i=0;i<KYBER_SYMBYTES;i++)
     buf[KYBER_SYMBYTES+i] = sk[KYBER_SECRETKEYBYTES-2*KYBER_SYMBYTES+i];
+  #if (SHA_ACC == 1)
+  esp_sha(SHA2_512, buf, 2*KYBER_SYMBYTES, kr);
+  #else
   hash_g(kr, buf, 2*KYBER_SYMBYTES);
-
+  #endif
+  
   /* coins are in kr+KYBER_SYMBYTES */
   indcpa_enc(cmp, buf, pk, kr+KYBER_SYMBYTES);
 
   fail = verify(ct, cmp, KYBER_CIPHERTEXTBYTES);
 
   /* overwrite coins in kr with H(c) */
+  #if (SHA_ACC == 1)
+  esp_sha(SHA2_256, ct, KYBER_CIPHERTEXTBYTES, kr+KYBER_SYMBYTES);
+  #else
   hash_h(kr+KYBER_SYMBYTES, ct, KYBER_CIPHERTEXTBYTES);
+  #endif
 
   /* Overwrite pre-k with z on re-encryption failure */
   cmov(kr, sk+KYBER_SECRETKEYBYTES-KYBER_SYMBYTES, KYBER_SYMBYTES, fail);
 
   /* hash concatenation of pre-k and H(c) to k */
+  #if (SHA_ACC == 1)
+  esp_sha(SHA2_256, kr, 2*KYBER_SYMBYTES, ss);
+  #else
   kdf(ss, kr, 2*KYBER_SYMBYTES);
+  #endif
   return 0;
 }
