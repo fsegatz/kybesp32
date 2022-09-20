@@ -1,28 +1,25 @@
 {
     "configurations": [
         {
+
             "name": "ESP-IDF",
             "compilerPath": "C:\\Users\\ihsan\\.espressif\\tools\\xtensa-esp32s3-elf\\esp-2021r2-patch3-8.4.0\\xtensa-esp32s3-elf\\bin\\xtensa-esp32s3-elf-gcc.exe",
             "cStandard": "c11",
             "cppStandard": "c++17",
+
             "includePath": [
-                "${config:idf.espIdfPath}/components/**",
-                "${config:idf.espIdfPathWin}/components/**",
-                "${config:idf.espAdfPath}/components/**",
-                "${config:idf.espAdfPathWin}/components/**",
                 "${workspaceFolder}/**"
             ],
-            "browse": {
-                "path": [
-                    "${config:idf.espIdfPath}/components",
-                    "${config:idf.espIdfPathWin}/components",
-                    "${config:idf.espAdfPath}/components/**",
-                    "${config:idf.espAdfPathWin}/components/**",
-                    "${workspaceFolder}"
-                ],
-                "limitSymbolsToIncludedHeaders": false
-            },
-            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "windows-msvc-x64",
+            "configurationProvider": "ms-vscode.cmake-tools",
+            "compilerPath": "C:\\Users\\ihsan\\.espressif\\tools\\xtensa-esp32s3-elf\\esp-2021r2-patch3-8.4.0\\xtensa-esp32s3-elf\\bin\\xtensa-esp32s3-elf-gcc.exe"
         }
     ],
     "version": 4
