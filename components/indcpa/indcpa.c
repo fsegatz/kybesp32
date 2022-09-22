@@ -1,6 +1,5 @@
 #include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
 #include "params.h"
 #include "indcpa.h"
 #include "polyvec.h"
@@ -215,12 +214,6 @@ void indcpa_keypair(uint8_t pk[KYBER_INDCPA_PUBLICKEYBYTES],
 
   esp_randombytes(buf, KYBER_SYMBYTES);
   hash_g(buf, buf, KYBER_SYMBYTES);
-
-  // printf("-------------------\n");
-  // for(int i=0; i<64; i++) {
-  //     printf("%i\t", buf[i]);
-  //     if((i+1)%8==0) printf("\n");
-  // }
   
   gen_a(a, publicseed);
 
