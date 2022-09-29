@@ -202,6 +202,136 @@ void gen_matrix(polyvec *a, const uint8_t seed[KYBER_SYMBYTES], int transposed)
 *              - uint8_t *sk: pointer to output private key
                               (of length KYBER_INDCPA_SECRETKEYBYTES bytes)
 **************************************************/
+#if (INDCPA_DUAL == 1)
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/semphr.h"
+
+SemaphoreHandle_t Semaphore_core_0 = NULL;
+SemaphoreHandle_t Semaphore_core_1 = NULL;
+SemaphoreHandle_t Semaphore_core_done = NULL;
+
+unsigned int i;
+uint8_t buf[2*KYBER_SYMBYTES];
+const uint8_t *publicseed = buf;
+const uint8_t *noiseseed = buf+KYBER_SYMBYTES;
+uint8_t nonce = 0;
+polyvec a[KYBER_K], e, pkpv, skpv;
+
+typedef struct IndcpaKeypairData_t
+{
+  uint8_t * pk;
+  uint8_t * sk;
+} GenericIndcpaKeypairData_t;
+
+TaskFunction_t indcpa_keypair_dual_0(void *xStruct) {
+  GenericIndcpaKeypairData_t * data = (GenericIndcpaKeypairData_t *) xStruct;
+
+  while(1) {
+    esp_randombytes(buf, KYBER_SYMBYTES);
+    hash_g(buf, buf, KYBER_SYMBYTES);
+    xSemaphoreGive(Semaphore_core_0); //give sign that core_1 can run
+
+    gen_a(a, publicseed);
+
+    // for(i=0;i<KYBER_K;i++)
+    //   poly_getnoise_eta1(&skpv.vec[i], noiseseed, nonce++);
+    // for(i=0;i<KYBER_K;i++)
+    //   poly_getnoise_eta1(&e.vec[i], noiseseed, nonce++);
+
+    //polyvec_ntt(&skpv);
+    //polyvec_ntt(&e);
+
+    xSemaphoreTake(Semaphore_core_1, portMAX_DELAY); //wait until core_1 finish
+
+    // matrix-vector multiplication
+    for(i=0;i<KYBER_K;i++) {
+      polyvec_basemul_acc_montgomery(&pkpv.vec[i], &a[i], &skpv);
+      poly_tomont(&pkpv.vec[i]);
+    }
+
+    polyvec_add(&pkpv, &pkpv, &e);
+    polyvec_reduce(&pkpv);
+
+    // pack_sk(data->sk, &skpv);
+    pack_pk(data->pk, &pkpv, publicseed);
+    xSemaphoreGive(Semaphore_core_done); //give sign, that task is done
+    vTaskDelete(NULL);    // Delete the task using the xHandle_0
+  }
+}
+
+TaskFunction_t indcpa_keypair_dual_1(void *xStruct) {
+  GenericIndcpaKeypairData_t * data = (GenericIndcpaKeypairData_t *) xStruct;
+
+  while(1) {
+    xSemaphoreTake(Semaphore_core_0, portMAX_DELAY); //wait until core_0 finish its job
+    // esp_randombytes(buf, KYBER_SYMBYTES);
+    // hash_g(buf, buf, KYBER_SYMBYTES);
+    
+    // gen_a(a, publicseed);
+
+    for(i=0;i<KYBER_K;i++)
+      poly_getnoise_eta1(&skpv.vec[i], noiseseed, nonce++);
+    for(i=0;i<KYBER_K;i++)
+      poly_getnoise_eta1(&e.vec[i], noiseseed, nonce++);
+
+    polyvec_ntt(&skpv);
+    polyvec_ntt(&e);
+
+    xSemaphoreGive(Semaphore_core_1); //give sign core_0 can run
+
+    // matrix-vector multiplication
+    // for(i=0;i<KYBER_K;i++) {
+    //   polyvec_basemul_acc_montgomery(&pkpv.vec[i], &a[i], &skpv);
+    //   poly_tomont(&pkpv.vec[i]);
+    // }
+
+    // polyvec_add(&pkpv, &pkpv, &e);
+    // polyvec_reduce(&pkpv);
+
+    pack_sk(data->sk, &skpv);
+    // pack_pk(data->pk, &pkpv, publicseed);
+    xSemaphoreGive(Semaphore_core_done); //give sign, that task is done
+    vTaskDelete(NULL);    // Delete the task using the xHandle_1
+  }
+}
+
+void indcpa_keypair(uint8_t * pk,
+                    uint8_t * sk)
+{
+  Semaphore_core_0 = xSemaphoreCreateCounting(1, 0);
+  Semaphore_core_1 = xSemaphoreCreateCounting(1, 0);
+  Semaphore_core_done = xSemaphoreCreateCounting(2, 0);
+
+  GenericIndcpaKeypairData_t param = { .pk = pk, .sk = sk};
+
+  TaskHandle_t xHandle_0 = NULL;
+  TaskHandle_t xHandle_1 = NULL;
+  BaseType_t xReturned_0;
+  BaseType_t xReturned_1;
+
+  xReturned_0 = xTaskCreatePinnedToCore(
+                  indcpa_keypair_dual_0,       /* Function that implements the task. */
+                  "indcpa_keypair_dual_0",          /* Text name for the task. */
+                  20000,      /* Stack size in words, not bytes. */
+                  ( void * ) &param,    /* Parameter passed into the task. */
+                  configMAX_PRIORITIES, /* Priority at which the task is created. */
+                  &xHandle_0, /* Used to pass out the created task's handle. */
+                  (BaseType_t) 0); /* Core ID */ 
+
+  xReturned_1 = xTaskCreatePinnedToCore(
+                  indcpa_keypair_dual_1,       /* Function that implements the task. */
+                  "indcpa_keypair_dual_1",          /* Text name for the task. */
+                  20000,      /* Stack size in words, not bytes. */
+                  ( void * ) &param,    /* Parameter passed into the task. */
+                  configMAX_PRIORITIES, /* Priority at which the task is created. */
+                  &xHandle_1, /* Used to pass out the created task's handle. */
+                  (BaseType_t) 1); /* Core ID */    
+
+  xSemaphoreTake(Semaphore_core_done, portMAX_DELAY); //wait until both tasks finish   
+}
+#else
 void indcpa_keypair(uint8_t pk[KYBER_INDCPA_PUBLICKEYBYTES],
                     uint8_t sk[KYBER_INDCPA_SECRETKEYBYTES])
 {
@@ -237,6 +367,7 @@ void indcpa_keypair(uint8_t pk[KYBER_INDCPA_PUBLICKEYBYTES],
   pack_sk(sk, &skpv);
   pack_pk(pk, &pkpv, publicseed);
 }
+#endif
 
 /*************************************************
 * Name:        indcpa_enc

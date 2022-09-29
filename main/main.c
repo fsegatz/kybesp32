@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "indcpa.h"
@@ -38,6 +39,10 @@ TaskFunction_t test_kyber_kem(void *pvParameters) {
         //Wait 5 seconds
         // fflush(stdout);
         // vTaskDelay(pdMS_TO_TICKS(5000));
+        if(memcmp(key_a, key_b, CRYPTO_BYTES)) {
+            printf("ERROR keys\n");
+        }
+
         vTaskDelete(NULL);
     }
 }
