@@ -5,6 +5,7 @@
 cmake_minimum_required(VERSION 3.5)
 add_compile_definitions("KYBER_90S")
 add_compile_definitions("KYBER_K=2")
+add_compile_definitions("SHA_ACC=1")
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(kybesp32)

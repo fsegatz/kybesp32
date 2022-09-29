@@ -36,8 +36,9 @@ TaskFunction_t test_kyber_kem(void *pvParameters) {
         printf("Clock cycle count \"crypto_kem_dec\": %u \n", tmp[3]-tmp[2]);
 
         //Wait 5 seconds
-        fflush(stdout);
-        vTaskDelay(pdMS_TO_TICKS(5000));
+        // fflush(stdout);
+        // vTaskDelay(pdMS_TO_TICKS(5000));
+        vTaskDelete(NULL);
     }
 }
 
