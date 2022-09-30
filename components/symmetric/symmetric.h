@@ -5,8 +5,12 @@
 #include <stdint.h>
 #include "params.h"
 
-#ifdef KYBER_90S
+#if (SHA_ACC == 1)
+#include "mbedtls/sha256.h"
+#include "mbedtls/sha512.h"
+#endif
 
+#if (KYBER_90S == 1)
 #include "aes256ctr.h"
 #include "sha2.h"
 
@@ -24,12 +28,21 @@ void kyber_aes256ctr_prf(uint8_t *out, size_t outlen, const uint8_t key[32], uin
 
 #define XOF_BLOCKBYTES AES256CTR_BLOCKBYTES
 
+#if (SHA_ACC == 1)
+#define hash_h(OUT, IN, INBYTES) mbedtls_sha256(IN, INBYTES, OUT, 0);
+#define hash_g(OUT, IN, INBYTES) mbedtls_sha512(IN, INBYTES, OUT, 0);
+#define xof_absorb(STATE, SEED, X, Y) kyber_aes256xof_absorb(STATE, SEED, X, Y)
+#define xof_squeezeblocks(OUT, OUTBLOCKS, STATE) aes256ctr_squeezeblocks(OUT, OUTBLOCKS, STATE)
+#define prf(OUT, OUTBYTES, KEY, NONCE) kyber_aes256ctr_prf(OUT, OUTBYTES, KEY, NONCE)
+#define kdf(OUT, IN, INBYTES) mbedtls_sha256(IN, INBYTES, OUT, 0);
+#else
 #define hash_h(OUT, IN, INBYTES) sha256(OUT, IN, INBYTES)
 #define hash_g(OUT, IN, INBYTES) sha512(OUT, IN, INBYTES)
 #define xof_absorb(STATE, SEED, X, Y) kyber_aes256xof_absorb(STATE, SEED, X, Y)
 #define xof_squeezeblocks(OUT, OUTBLOCKS, STATE) aes256ctr_squeezeblocks(OUT, OUTBLOCKS, STATE)
 #define prf(OUT, OUTBYTES, KEY, NONCE) kyber_aes256ctr_prf(OUT, OUTBYTES, KEY, NONCE)
 #define kdf(OUT, IN, INBYTES) sha256(OUT, IN, INBYTES)
+#endif //(SHA_ACC == 1)
 
 #else
 

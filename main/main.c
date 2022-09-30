@@ -1,8 +1,10 @@
 #include <stdio.h>
+#include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "indcpa.h"
 #include "kem.h"
+#include "taskpriorities.h"
 
 TaskFunction_t test_kyber_kem(void *pvParameters) {
     configASSERT( ( ( uint32_t ) pvParameters ) == 1 );
@@ -36,8 +38,13 @@ TaskFunction_t test_kyber_kem(void *pvParameters) {
         printf("Clock cycle count \"crypto_kem_dec\": %u \n", tmp[3]-tmp[2]);
 
         //Wait 5 seconds
-        fflush(stdout);
-        vTaskDelay(pdMS_TO_TICKS(5000));
+        // fflush(stdout);
+        // vTaskDelay(pdMS_TO_TICKS(5000));
+        if(memcmp(key_a, key_b, CRYPTO_BYTES)) {
+            printf("ERROR keys\n");
+        }
+
+        vTaskDelete(NULL);
     }
 }
 
@@ -52,7 +59,7 @@ void app_main(void)
                     "NAME",          /* Text name for the task. */
                     20000,      /* Stack size in words, not bytes. */
                     ( void * ) 1,    /* Parameter passed into the task. */
-                    configMAX_PRIORITIES, /* Priority at which the task is created. */
+                    MAIN_TASK_PRIORITY, /* Priority at which the task is created. */
                     &xHandle, /* Used to pass out the created task's handle. */
                     (BaseType_t) 0); /* Core ID */     
 
