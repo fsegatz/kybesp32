@@ -4,6 +4,7 @@
 #include "freertos/task.h"
 #include "indcpa.h"
 #include "kem.h"
+#include "taskpriorities.h"
 
 TaskFunction_t test_kyber_kem(void *pvParameters) {
     configASSERT( ( ( uint32_t ) pvParameters ) == 1 );
@@ -58,7 +59,7 @@ void app_main(void)
                     "NAME",          /* Text name for the task. */
                     20000,      /* Stack size in words, not bytes. */
                     ( void * ) 1,    /* Parameter passed into the task. */
-                    configMAX_PRIORITIES, /* Priority at which the task is created. */
+                    MAIN_TASK_PRIORITY, /* Priority at which the task is created. */
                     &xHandle, /* Used to pass out the created task's handle. */
                     (BaseType_t) 0); /* Core ID */     
 
