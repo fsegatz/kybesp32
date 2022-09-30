@@ -212,33 +212,31 @@ SemaphoreHandle_t Semaphore_core_0 = NULL;
 SemaphoreHandle_t Semaphore_core_1 = NULL;
 SemaphoreHandle_t Semaphore_core_done = NULL;
 
-unsigned int i;
-uint8_t buf[2*KYBER_SYMBYTES];
-const uint8_t *publicseed = buf;
-const uint8_t *noiseseed = buf+KYBER_SYMBYTES;
-uint8_t nonce = 0;
-polyvec a[KYBER_K], e, pkpv, skpv;
-
 typedef struct IndcpaKeypairData_t
 {
   uint8_t * pk;
   uint8_t * sk;
+  uint8_t buf[2*KYBER_SYMBYTES];
+  polyvec a[KYBER_K], e, pkpv, skpv;
 } GenericIndcpaKeypairData_t;
 
 TaskFunction_t indcpa_keypair_dual_0(void *xStruct) {
   GenericIndcpaKeypairData_t * data = (GenericIndcpaKeypairData_t *) xStruct;
+  const uint8_t *publicseed = data->buf;
+  const uint8_t *noiseseed = data->buf+KYBER_SYMBYTES;
 
   while(1) {
-    esp_randombytes(buf, KYBER_SYMBYTES);
-    hash_g(buf, buf, KYBER_SYMBYTES);
+    esp_randombytes(data->buf, KYBER_SYMBYTES);
+    hash_g(data->buf, data->buf, KYBER_SYMBYTES);
     xSemaphoreGive(Semaphore_core_0); //give sign that core_1 can run
 
-    gen_a(a, publicseed);
+    gen_a(data->a, publicseed);
 
-    // for(i=0;i<KYBER_K;i++)
-    //   poly_getnoise_eta1(&skpv.vec[i], noiseseed, nonce++);
-    // for(i=0;i<KYBER_K;i++)
-    //   poly_getnoise_eta1(&e.vec[i], noiseseed, nonce++);
+    // uint8_t nonce = 0;
+    // for(unsigned int i=0;i<KYBER_K;i++)
+    //   poly_getnoise_eta1(&data->skpv.vec[i], noiseseed, nonce++);
+    // for(unsigned int i=0;i<KYBER_K;i++)
+    //   poly_getnoise_eta1(&data->e.vec[i], noiseseed, nonce++);
 
     //polyvec_ntt(&skpv);
     //polyvec_ntt(&e);
@@ -246,16 +244,16 @@ TaskFunction_t indcpa_keypair_dual_0(void *xStruct) {
     xSemaphoreTake(Semaphore_core_1, portMAX_DELAY); //wait until core_1 finish
 
     // matrix-vector multiplication
-    for(i=0;i<KYBER_K;i++) {
-      polyvec_basemul_acc_montgomery(&pkpv.vec[i], &a[i], &skpv);
-      poly_tomont(&pkpv.vec[i]);
+    for(unsigned int i=0;i<KYBER_K;i++) {
+      polyvec_basemul_acc_montgomery(&data->pkpv.vec[i], &data->a[i], &data->skpv);
+      poly_tomont(&data->pkpv.vec[i]);
     }
 
-    polyvec_add(&pkpv, &pkpv, &e);
-    polyvec_reduce(&pkpv);
+    polyvec_add(&data->pkpv, &data->pkpv, &data->e);
+    polyvec_reduce(&data->pkpv);
 
-    // pack_sk(data->sk, &skpv);
-    pack_pk(data->pk, &pkpv, publicseed);
+    // pack_sk(data->sk, &data->skpv);
+    pack_pk(data->pk, &data->pkpv, publicseed);
     xSemaphoreGive(Semaphore_core_done); //give sign, that task is done
     vTaskDelete(NULL);    // Delete the task using the xHandle_0
   }
@@ -263,35 +261,38 @@ TaskFunction_t indcpa_keypair_dual_0(void *xStruct) {
 
 TaskFunction_t indcpa_keypair_dual_1(void *xStruct) {
   GenericIndcpaKeypairData_t * data = (GenericIndcpaKeypairData_t *) xStruct;
+  const uint8_t *publicseed = data->buf;
+  const uint8_t *noiseseed = data->buf+KYBER_SYMBYTES;
 
   while(1) {
     xSemaphoreTake(Semaphore_core_0, portMAX_DELAY); //wait until core_0 finish its job
-    // esp_randombytes(buf, KYBER_SYMBYTES);
-    // hash_g(buf, buf, KYBER_SYMBYTES);
+    // esp_randombytes(data->buf, KYBER_SYMBYTES);
+    // hash_g(data->buf, data->buf, KYBER_SYMBYTES);
     
-    // gen_a(a, publicseed);
+    // gen_a(data->a, publicseed);
 
-    for(i=0;i<KYBER_K;i++)
-      poly_getnoise_eta1(&skpv.vec[i], noiseseed, nonce++);
-    for(i=0;i<KYBER_K;i++)
-      poly_getnoise_eta1(&e.vec[i], noiseseed, nonce++);
+    uint8_t nonce = 0;
+    for(unsigned int i=0;i<KYBER_K;i++)
+      poly_getnoise_eta1(&data->skpv.vec[i], noiseseed, nonce++);
+    for(unsigned int i=0;i<KYBER_K;i++)
+      poly_getnoise_eta1(&data->e.vec[i], noiseseed, nonce++);
 
-    polyvec_ntt(&skpv);
-    polyvec_ntt(&e);
+    polyvec_ntt(&data->skpv);
+    polyvec_ntt(&data->e);
 
     xSemaphoreGive(Semaphore_core_1); //give sign core_0 can run
 
     // matrix-vector multiplication
-    // for(i=0;i<KYBER_K;i++) {
-    //   polyvec_basemul_acc_montgomery(&pkpv.vec[i], &a[i], &skpv);
-    //   poly_tomont(&pkpv.vec[i]);
+    // for(unsigned int i=0;i<KYBER_K;i++) {
+    //   polyvec_basemul_acc_montgomery(&data->pkpv.vec[i], &data->a[i], &data->skpv);
+    //   poly_tomont(&data->pkpv.vec[i]);
     // }
 
-    // polyvec_add(&pkpv, &pkpv, &e);
-    // polyvec_reduce(&pkpv);
+    // polyvec_add(&data->pkpv, &data->pkpv, &data->e);
+    // polyvec_reduce(&data->pkpv);
 
-    pack_sk(data->sk, &skpv);
-    // pack_pk(data->pk, &pkpv, publicseed);
+    pack_sk(data->sk, &data->skpv);
+    // pack_pk(data->pk, &data->pkpv, publicseed);
     xSemaphoreGive(Semaphore_core_done); //give sign, that task is done
     vTaskDelete(NULL);    // Delete the task using the xHandle_1
   }
@@ -329,7 +330,12 @@ void indcpa_keypair(uint8_t * pk,
                   &xHandle_1, /* Used to pass out the created task's handle. */
                   (BaseType_t) 1); /* Core ID */    
 
-  xSemaphoreTake(Semaphore_core_done, portMAX_DELAY); //wait until both tasks finish   
+  xSemaphoreTake(Semaphore_core_done, portMAX_DELAY); //wait until both tasks finish
+
+  // for(unsigned int i = 0; i<KYBER_INDCPA_PUBLICKEYBYTES; i++) {
+  //   printf("%u ",pk[i]);
+  //   if (!((i+1) % 8)) printf("\n");   
+  // }
 }
 #else
 void indcpa_keypair(uint8_t pk[KYBER_INDCPA_PUBLICKEYBYTES],
