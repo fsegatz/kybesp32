@@ -17,25 +17,25 @@ TaskFunction_t test_kyber_kem(void *pvParameters) {
         uint8_t key_a[CRYPTO_BYTES];
         uint8_t key_b[CRYPTO_BYTES];
 
-        esp_cpu_ccount_t tmp[4];
+        esp_cpu_cycle_count_t tmp[4];
 
-        tmp[0] = esp_cpu_get_ccount();
+        tmp[0] = esp_cpu_get_cycle_count();
         //Alice generates a public key
         crypto_kem_keypair(pk, sk);
-        tmp[1] = esp_cpu_get_ccount();
+        tmp[1] = esp_cpu_get_cycle_count();
 
         //Bob derives a secret key and creates a response
         crypto_kem_enc(ct, key_b, pk);
-        tmp[2] = esp_cpu_get_ccount();
+        tmp[2] = esp_cpu_get_cycle_count();
 
         //Alice uses Bobs response to get her shared key
         crypto_kem_dec(key_a, ct, sk);
-        tmp[3] = esp_cpu_get_ccount();
+        tmp[3] = esp_cpu_get_cycle_count();
 
         //printf("Clock cycle count \"Reference\": %u \n", tmp[0]);
-        printf("Clock cycle count \"crypto_kem_keypair\": %u \n", tmp[1]-tmp[0]);
-        printf("Clock cycle count \"crypto_kem_enc\": %u \n", tmp[2]-tmp[1]);
-        printf("Clock cycle count \"crypto_kem_dec\": %u \n", tmp[3]-tmp[2]);
+        printf("Clock cycle count \"crypto_kem_keypair\": %lu \n", tmp[1]-tmp[0]);
+        printf("Clock cycle count \"crypto_kem_enc\": %lu \n", tmp[2]-tmp[1]);
+        printf("Clock cycle count \"crypto_kem_dec\": %lu \n", tmp[3]-tmp[2]);
 
         //Wait 5 seconds
         // fflush(stdout);

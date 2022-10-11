@@ -623,8 +623,9 @@ TaskFunction_t indcpa_dec_dual_0(void *xStruct) {
   GenericIndcpaDecData_t * data = (GenericIndcpaDecData_t *) xStruct;
   while(1) {
     unpack_sk(&data->skpv, data->sk);
+    poly_decompress(&data->v, data->c+KYBER_POLYVECCOMPRESSEDBYTES);
 
-    //unpack_ciphertext(&data->b, &data->v, data->c);
+    //polyvec_decompress(&data->b, data->c);
     //polyvec_ntt(&data->b);
     xSemaphoreTake(Semaphore_core_1, portMAX_DELAY);
     
@@ -644,7 +645,7 @@ TaskFunction_t indcpa_dec_dual_0(void *xStruct) {
 TaskFunction_t indcpa_dec_dual_1(void *xStruct) {
   GenericIndcpaDecData_t * data = (GenericIndcpaDecData_t *) xStruct;
   while(1) {
-    unpack_ciphertext(&data->b, &data->v, data->c);
+    polyvec_decompress(&data->b, data->c);
     polyvec_ntt(&data->b);
 
     //unpack_sk(&data->skpv, data->sk);
