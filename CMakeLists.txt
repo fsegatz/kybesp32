@@ -8,7 +8,10 @@ add_compile_definitions("KYBER_K=2")
 add_compile_definitions("SHA_ACC=1")
 add_compile_definitions("INDCPA_KEYPAIR_DUAL=1")
 add_compile_definitions("INDCPA_ENC_DUAL=1")
-add_compile_definitions("INDCPA_DEC_DUAL=0")
+add_compile_definitions("INDCPA_DEC_DUAL=1")
+
+add_compile_definitions("MEASUREINDCPA=1")
+add_compile_definitions("MEASURESHA=1")
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(kybesp32)

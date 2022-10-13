@@ -8,6 +8,8 @@
 #include "symmetric.h"
 #include "randombytes.h"
 
+#include "esp_cpu.h"
+
 #if ((INDCPA_KEYPAIR_DUAL == 1) || (INDCPA_ENC_DUAL == 1) || (INDCPA_DEC_DUAL == 1))
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -304,6 +306,11 @@ TaskFunction_t indcpa_keypair_dual_1(void *xStruct) {
 void indcpa_keypair(uint8_t pk[KYBER_INDCPA_PUBLICKEYBYTES],
                     uint8_t sk[KYBER_INDCPA_SECRETKEYBYTES])
 {
+  #if(MEASUREINDCPA == 1)
+  esp_cpu_cycle_count_t tmp[2];
+  tmp[0] = esp_cpu_get_cycle_count();
+  #endif
+
   Semaphore_core_0 = xSemaphoreCreateCounting(1, 0);
   Semaphore_core_1 = xSemaphoreCreateCounting(1, 0);
   Semaphore_core_done = xSemaphoreCreateCounting(2, 0);
@@ -340,6 +347,11 @@ void indcpa_keypair(uint8_t pk[KYBER_INDCPA_PUBLICKEYBYTES],
   vSemaphoreDelete(Semaphore_core_1);
   vSemaphoreDelete(Semaphore_core_done);
 
+  #if(MEASUREINDCPA == 1)
+  tmp[1] = esp_cpu_get_cycle_count();
+  printf("Clock cycle count \"indcpa_keypair\" dual-core: %lu \n", tmp[1]-tmp[0]);
+  #endif
+
   // for(unsigned int i = 0; i<KYBER_INDCPA_PUBLICKEYBYTES; i++) {
   //   printf("%u ",pk[i]);
   //   if (!((i+1) % 8)) printf("\n");   
@@ -349,6 +361,11 @@ void indcpa_keypair(uint8_t pk[KYBER_INDCPA_PUBLICKEYBYTES],
 void indcpa_keypair(uint8_t pk[KYBER_INDCPA_PUBLICKEYBYTES],
                     uint8_t sk[KYBER_INDCPA_SECRETKEYBYTES])
 {
+  #if(MEASUREINDCPA == 1)
+  esp_cpu_cycle_count_t tmp[2];
+  tmp[0] = esp_cpu_get_cycle_count();
+  #endif
+
   unsigned int i;
   uint8_t buf[2*KYBER_SYMBYTES];
   const uint8_t *publicseed = buf;
@@ -380,6 +397,11 @@ void indcpa_keypair(uint8_t pk[KYBER_INDCPA_PUBLICKEYBYTES],
 
   pack_sk(sk, &skpv);
   pack_pk(pk, &pkpv, publicseed);
+
+  #if(MEASUREINDCPA == 1)
+  tmp[1] = esp_cpu_get_cycle_count();
+  printf("Clock cycle count \"indcpa_keypair\" single-core: %lu \n", tmp[1]-tmp[0]);
+  #endif
 }
 #endif
 
@@ -516,6 +538,11 @@ void indcpa_enc(uint8_t c[KYBER_INDCPA_BYTES],
                 const uint8_t pk[KYBER_INDCPA_PUBLICKEYBYTES],
                 const uint8_t coins[KYBER_SYMBYTES])
 {
+  #if(MEASUREINDCPA == 1)
+  esp_cpu_cycle_count_t tmp[2];
+  tmp[0] = esp_cpu_get_cycle_count();
+  #endif
+
   GenericIndcpaEncData_t xStruct = { .c = c, .m = m, .pk = pk, .coins = coins };
 
   Semaphore_core_0 = xSemaphoreCreateCounting(1, 0);
@@ -551,6 +578,11 @@ void indcpa_enc(uint8_t c[KYBER_INDCPA_BYTES],
   vSemaphoreDelete(Semaphore_core_0);
   vSemaphoreDelete(Semaphore_core_1);
   vSemaphoreDelete(Semaphore_core_done);
+  
+  #if(MEASUREINDCPA == 1)
+  tmp[1] = esp_cpu_get_cycle_count();
+  printf("Clock cycle count \"indcpa_enc\" dual-core: %lu \n", tmp[1]-tmp[0]);
+  #endif
 }
 #else
 void indcpa_enc(uint8_t c[KYBER_INDCPA_BYTES],
@@ -558,6 +590,12 @@ void indcpa_enc(uint8_t c[KYBER_INDCPA_BYTES],
                 const uint8_t pk[KYBER_INDCPA_PUBLICKEYBYTES],
                 const uint8_t coins[KYBER_SYMBYTES])
 {
+  #if(MEASUREINDCPA == 1)
+  esp_cpu_cycle_count_t tmp[2];
+  tmp[0] = esp_cpu_get_cycle_count();
+  #endif
+
+
   unsigned int i;
   uint8_t seed[KYBER_SYMBYTES];
   uint8_t nonce = 0;
@@ -592,6 +630,11 @@ void indcpa_enc(uint8_t c[KYBER_INDCPA_BYTES],
   poly_reduce(&v);
 
   pack_ciphertext(c, &b, &v);
+
+  #if(MEASUREINDCPA == 1)
+  tmp[1] = esp_cpu_get_cycle_count();
+  printf("Clock cycle count \"indcpa_enc\" single-core: %lu \n", tmp[1]-tmp[0]);
+  #endif
 }
 #endif
 
@@ -668,6 +711,11 @@ void indcpa_dec(uint8_t m[KYBER_INDCPA_MSGBYTES],
                 const uint8_t c[KYBER_INDCPA_BYTES],
                 const uint8_t sk[KYBER_INDCPA_SECRETKEYBYTES])
 {
+  #if(MEASUREINDCPA == 1)
+  esp_cpu_cycle_count_t tmp[2];
+  tmp[0] = esp_cpu_get_cycle_count();
+  #endif
+
   GenericIndcpaDecData_t xStruct = {.m = m, .c = c, .sk = sk};
   Semaphore_core_0 = xSemaphoreCreateCounting(1, 0);
   Semaphore_core_1 = xSemaphoreCreateCounting(1, 0);
@@ -702,12 +750,22 @@ void indcpa_dec(uint8_t m[KYBER_INDCPA_MSGBYTES],
   vSemaphoreDelete(Semaphore_core_0);
   vSemaphoreDelete(Semaphore_core_1);
   vSemaphoreDelete(Semaphore_core_done);
+
+  #if(MEASUREINDCPA == 1)
+  tmp[1] = esp_cpu_get_cycle_count();
+  printf("Clock cycle count \"indcpa_dec\" dual-core: %lu \n", tmp[1]-tmp[0]);
+  #endif
 }
 #else
 void indcpa_dec(uint8_t m[KYBER_INDCPA_MSGBYTES],
                 const uint8_t c[KYBER_INDCPA_BYTES],
                 const uint8_t sk[KYBER_INDCPA_SECRETKEYBYTES])
 {
+  #if(MEASUREINDCPA == 1)
+  esp_cpu_cycle_count_t tmp[2];
+  tmp[0] = esp_cpu_get_cycle_count();
+  #endif
+
   polyvec b, skpv;
   poly v, mp;
 
@@ -722,5 +780,10 @@ void indcpa_dec(uint8_t m[KYBER_INDCPA_MSGBYTES],
   poly_reduce(&mp);
 
   poly_tomsg(m, &mp);
+
+  #if(MEASUREINDCPA == 1)
+  tmp[1] = esp_cpu_get_cycle_count();
+  printf("Clock cycle count \"indcpa_dec\" single-core: %lu \n", tmp[1]-tmp[0]);
+  #endif
 }
 #endif

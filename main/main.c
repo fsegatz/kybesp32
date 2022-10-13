@@ -5,6 +5,8 @@
 #include "indcpa.h"
 #include "kem.h"
 #include "taskpriorities.h"
+#include "symmetric.h"
+#include "randombytes.h"
 
 TaskFunction_t test_kyber_kem(void *pvParameters) {
     configASSERT( ( ( uint32_t ) pvParameters ) == 1 );
@@ -18,6 +20,30 @@ TaskFunction_t test_kyber_kem(void *pvParameters) {
         uint8_t key_b[CRYPTO_BYTES];
 
         esp_cpu_cycle_count_t tmp[4];
+
+        #if(MEASURESHA == 1)
+        esp_cpu_cycle_count_t tmp1[4];
+        uint8_t bufg[2*KYBER_SYMBYTES];
+        esp_randombytes(bufg, KYBER_SYMBYTES);
+        tmp1[0] = esp_cpu_get_cycle_count();
+        hash_g(bufg, bufg, KYBER_SYMBYTES);
+        tmp1[1] = esp_cpu_get_cycle_count();
+
+        uint8_t bufh[2*KYBER_SYMBYTES];
+        esp_randombytes(bufh, KYBER_SYMBYTES);
+        tmp1[2] = esp_cpu_get_cycle_count();
+        hash_h(bufh, bufh, KYBER_SYMBYTES);
+        tmp1[3] = esp_cpu_get_cycle_count();
+
+        #if(SHA_ACC == 1)
+        printf("Clock cycle count \"hash_g\" SHA-512 acc: %lu \n", tmp1[1]-tmp1[0]);
+        printf("Clock cycle count \"hash_h\" SHA-256 acc: %lu \n", tmp1[3]-tmp1[2]);
+        #else
+        printf("Clock cycle count \"hash_g\" SHA-512 non acc: %lu \n", tmp1[1]-tmp1[0]);
+        printf("Clock cycle count \"hash_h\" SHA-256 non acc: %lu \n", tmp1[3]-tmp1[2]);
+        #endif
+
+        #endif
 
         tmp[0] = esp_cpu_get_cycle_count();
         //Alice generates a public key
