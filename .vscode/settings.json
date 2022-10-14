@@ -1,0 +1,14 @@
+{
+    "idf.adapterTargetName": "esp32s3",
+    "cmake.configureOnOpen": false,
+    "idf.portWin": "COM5",
+    "idf.flashType": "UART",
+    "idf.openOcdConfigs": [
+        "interface/ftdi/esp32_devkitj_v1.cfg",
+        "target/esp32s3.cfg"
+    ],
+    "files.associations": {
+        "sha2.h": "c",
+        "randombytes.h": "c"
+    }
+}
