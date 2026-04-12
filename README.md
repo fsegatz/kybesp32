@@ -3,7 +3,7 @@
 
 This research project was carried out as part of the course [II2202, Research Methodology and Scientific Writing](https://www.kth.se/student/kurser/kurs/II2202?l=en), at KTH Stockholm to gain knowledge in conducting scientific research in an information and communications technology-related topic. We have decided on the topic ”Efficient Implementation of CRYSTALS-KYBER Key Encapsulation Mechanism on ESP32” as it is relevant but still open-ended enough so that meaningful results can be presented after 8 weeks and 20h work time per person per week. 
 In the course of this project, both authors learned a lot about cryptography, the challenges that cryptography faces in the fast-advancing quantum computer technology and the process of implementing and optimizing algorithms on the ESP32 platform using FreeRTOS and the ESP-IDF. When progressing through the project, we were confronted with many open questions that we would like to investigate more in the future. 
-Finally, we want to thank  [Assoc. Prof. Masoumeh (Azin) Ebrahimi](https://people.kth.se/~mebr/) for her amazing support, guidance
+Finally, we want to thank  [Assoc. Prof. Masoumeh (Azin) Ebrahimi](https://orcid.org/0000-0001-7877-6712) for her amazing support, guidance
 and tips, but particularly the incredible amount of time she took for the other groups and us.
 
 We want to give credits to Bos et al. for their [official reference implementation](https://github.com/pq-crystals/kyber/blob/master/README.md) of the [Kyber](https://www.pq-crystals.org/kyber/) key encapsulation mechanism, which was the baseline for our implementation effort. All components are basically their code, and we just modified it to fit our purpose of creating an efficient implementation on ESP32.
